@@ -1,0 +1,22 @@
+CHANGES
+=======
+
+0.1.0
+-----
+
+* Fix pep8 issues and add apache header to subunit2html
+* Flush out the readme in preparation for the first release
+* Add subunit2html from jenkins slave scripts
+* Ensure failure is printed with --until-failure in pretty mode
+* Add --until-failure option to ostestr
+* Add basic unit tests to check ostestr return codes
+* Add percent change to duration on subunit-trace output
+* Use python APIs to call run modules in ostestr
+* Add ostestr options to control parallelism
+* Fix the testr init subprocess call
+* Improve the arguments for ostestr
+* Fix pep8 issues
+* Fix return code on test run failure
+* Add --pdb flag and fix --no-discover flag
+* Add subunit-trace and ostestr
+* Initial Cookiecutter Commit
