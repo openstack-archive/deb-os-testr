@@ -1,0 +1,5 @@
+python-os-testr (0.1.0-1) unstable; urgency=medium
+
+  * Initial release (Closes: #789613).
+
+ -- James Page <james.page@ubuntu.com>  Mon, 22 Jun 2015 17:31:41 +0100

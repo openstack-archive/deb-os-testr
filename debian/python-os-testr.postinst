@@ -1,0 +1,13 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" = "configure" ] ; then
+	update-alternatives --install /usr/bin/ostestr ostestr /usr/bin/python2-ostestr 300
+	update-alternatives --install /usr/bin/subunit-trace subunit-trace /usr/bin/python2-subunit-trace 300
+	update-alternatives --install /usr/bin/subunit2html subunit2html /usr/bin/python2-subunit2html 300
+fi
+
+#DEBHELPER#
+
+exit 0

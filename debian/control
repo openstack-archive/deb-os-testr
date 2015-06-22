@@ -1,0 +1,73 @@
+Source: python-os-testr
+Section: python
+Priority: optional
+Maintainer: PKG OpenStack <openstack-devel@lists.alioth.debian.org>
+Uploaders: James Page <james.page@ubuntu.com>,
+Build-Depends: debhelper (>= 9),
+               dh-python,
+               openstack-pkg-tools,
+               python-all,
+               python-pbr,
+               python-setuptools,
+               python-sphinx,
+               python3-all,
+               python3-pbr,
+               python3-setuptools,
+Build-Depends-Indep: python-babel (>= 1.3),
+                     python-coverage (>= 3.6),
+                     python-hacking,
+                     python-oslosphinx (>= 2.2.0),
+                     python-oslotest (>= 1.2.0),
+                     python-testscenarios (>= 0.4),
+                     python-testtools (>= 0.9.36),
+                     python3-babel (>= 1.3),
+                     python3-oslotest (>= 1.2.0),
+                     python3-testscenarios (>= 0.4),
+                     python3-testtools (>= 0.9.36),
+                     subunit (>= 0.0.18),
+                     testrepository (>= 0.0.18),
+Standards-Version: 3.9.6
+Vcs-Browser: http://anonscm.debian.org/gitweb/?p=openstack/python-os-testr.git
+Vcs-Git: git://anonscm.debian.org/openstack/python-os-testr.git
+Homepage: http://github.com/openstack/os-testr
+
+Package: python-os-testr
+Architecture: all
+Depends: python-babel (>= 1.3),
+         python-testtools (>= 0.9.36),
+         subunit (>= 0.0.18),
+         testrepository (>= 0.0.18),
+         ${misc:Depends},
+         ${python:Depends},
+Suggests: python-os-testr-doc,
+Description: Utility wrappers for testrepository for OpenStack projects - Python 2.x
+ A number of small wrappers to support use of testrepository
+ across OpenStack projects.
+ .
+ This package contains the Python 2.x module and binaries.
+
+Package: python3-os-testr
+Architecture: all
+Depends: python3-babel (>= 1.3),
+         python3-testtools (>= 0.9.36),
+         subunit (>= 0.0.18),
+         testrepository (>= 0.0.18),
+         ${misc:Depends},
+         ${python3:Depends},
+Suggests: python-os-testr-doc,
+Description: Utility wrappers for testrepository for OpenStack projects - Python 3.x
+ A number of small wrappers to support use of testrepository
+ across OpenStack projects.
+ .
+ This package contains the Python 3.x module and binaries.
+
+Package: python-os-testr-doc
+Section: doc
+Architecture: all
+Depends: ${misc:Depends},
+         ${sphinxdoc:Depends},
+Description: Utility wrappers for testrepository for OpenStack projects - doc
+ A number of small wrappers to support use of testrepository
+ across OpenStack projects.
+ .
+ This package contains the documentation.
