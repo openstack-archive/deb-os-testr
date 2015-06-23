@@ -26,23 +26,6 @@ override_dh_install:
 	mv $(CURDIR)/debian/python-os-testr/usr/bin/subunit2html $(CURDIR)/debian/python-os-testr/usr/bin/python2-subunit2html
 	mv $(CURDIR)/debian/python3-os-testr/usr/bin/subunit2html $(CURDIR)/debian/python3-os-testr/usr/bin/python3-subunit2html
 
-override_dh_auto_test:
-ifeq (,$(findstring nocheck, $(DEB_BUILD_OPTIONS)))
-#	@echo "===> Running tests"
-#	set -e ; set -x ; for i in $(PYTHONS) $(PYTHON3S); do \
-#		PYMAJOR=`echo $$i | cut -d'.' -f1` ; \
-#		echo "===> Testing with python$$i (python$$PYMAJOR)" ; \
-#		rm -rf .testrepository ; \
-#		testr-python$$PYMAJOR init ; \
-#		TEMP_REZ=`mktemp -t` ; \
-#		PYTHONPATH=$(CURDIR) PYTHON=python$$i testr-python$$PYMAJOR run --subunit | tee $$TEMP_REZ | subunit2pyunit ; \
-#		cat $$TEMP_REZ | subunit-filter -s --no-passthrough | subunit-stats ; \
-#		rm -f $$TEMP_REZ ; \
-#		testr-python$$PYMAJOR slowest ; \
-#	done
-	:
-endif
-
 override_dh_sphinxdoc:
 	sphinx-build -b html doc/source debian/python-os-testr-doc/usr/share/doc/python-os-testr-doc/html
 	dh_sphinxdoc -O--buildsystem=python_distutils

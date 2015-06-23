@@ -1,0 +1,51 @@
+From 4292155e3e546064d10d56a5a0cd1dedc7eb25bd Mon Sep 17 00:00:00 2001
+From: James Page <james.page@ubuntu.com>
+Date: Tue, 23 Jun 2015 09:47:44 +0100
+Subject: [PATCH] Misc Python 3 compatibility fixes
+
+Python 3 renames StringIO -> io.  Use six to deal
+with this change.
+
+Introduces new test dependency on six for StringIO.
+
+Change-Id: Ia875b7fcbb976599053970ef79ed3f3474626bad
+---
+ os_testr/tests/test_return_codes.py | 6 +++---
+ test-requirements.txt               | 1 +
+ 2 files changed, 4 insertions(+), 3 deletions(-)
+
+--- a/os_testr/tests/test_return_codes.py
++++ b/os_testr/tests/test_return_codes.py
+@@ -14,13 +14,13 @@
+ 
+ import os
+ import shutil
+-import StringIO
+ import subprocess
+ import tempfile
+ 
+ import testtools
+ 
+ from os_testr.tests import base
++from six import StringIO
+ 
+ DEVNULL = open(os.devnull, 'wb')
+ 
+@@ -47,8 +47,8 @@ class TestReturnCodes(base.TestCase):
+         shutil.copy('os_testr/tests/files/setup.cfg', self.setup_cfg_file)
+         shutil.copy('os_testr/tests/files/__init__.py', self.init_file)
+ 
+-        self.stdout = StringIO.StringIO()
+-        self.stderr = StringIO.StringIO()
++        self.stdout = StringIO()
++        self.stderr = StringIO()
+         # Change directory, run wrapper and check result
+         self.addCleanup(os.chdir, os.path.abspath(os.curdir))
+         os.chdir(self.directory)
+--- a/test-requirements.txt
++++ b/test-requirements.txt
+@@ -10,3 +10,4 @@ sphinx>=1.1.2,!=1.2.0,!=1.3b1,<1.3
+ oslosphinx>=2.2.0  # Apache-2.0
+ oslotest>=1.2.0  # Apache-2.0
+ testscenarios>=0.4
++six>=1.9.0

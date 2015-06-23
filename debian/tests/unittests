@@ -1,0 +1,23 @@
+#!/bin/sh
+
+PYTHONS=$(pyversions -vr)
+PYTHON3S=$(py3versions -vr)
+
+BINARIES="ostestr subunit-trace subunit2html"
+
+set -e
+echo "===> Running tests"
+for i in ${PYTHONS} ${PYTHON3S}; do
+  PYMAJOR=`echo $i | cut -d'.' -f1`
+  echo "===> Testing with python$i (python$PYMAJOR)"
+  for bin in $BINARIES; do
+    update-alternatives --set $bin /usr/bin/python$PYMAJOR-$bin
+  done
+  rm -rf .testrepository
+  testr-python$PYMAJOR init
+  TEMP_REZ=`mktemp -t` 
+  PYTHONPATH=`pwd` PYTHON=python$i testr-python$PYMAJOR run --subunit | tee $TEMP_REZ | subunit2pyunit ; \
+  cat $TEMP_REZ | subunit-filter -s --no-passthrough | subunit-stats ; \
+  rm -f $TEMP_REZ ; \
+  testr-python$PYMAJOR slowest ; \
+done
