@@ -6,6 +6,10 @@ PYTHON3S:=$(shell py3versions -vr)
 UPSTREAM_GIT = git://github.com/openstack/os-testr.git
 -include /usr/share/openstack-pkg-tools/pkgos.make
 
+export OSLO_PACKAGE_VERSION=$(VERSION)
+
+export PATH+=:$(CURDIR)/debian/bin
+
 %:
 	dh $@ --buildsystem=python_distutils --with python2,python3,sphinxdoc
 
@@ -25,6 +29,30 @@ override_dh_install:
 	mv $(CURDIR)/debian/python3-os-testr/usr/bin/subunit-trace $(CURDIR)/debian/python3-os-testr/usr/bin/python3-subunit-trace
 	mv $(CURDIR)/debian/python-os-testr/usr/bin/subunit2html $(CURDIR)/debian/python-os-testr/usr/bin/python2-subunit2html
 	mv $(CURDIR)/debian/python3-os-testr/usr/bin/subunit2html $(CURDIR)/debian/python3-os-testr/usr/bin/python3-subunit2html
+
+override_dh_auto_test:
+ifeq (,$(findstring nocheck, $(DEB_BUILD_OPTIONS)))
+	@echo "===> Running tests"
+	set -e ; set -x ; for i in 2.7 $(PYTHON3S) ; do \
+		chmod +x $(CURDIR)/debian/bin/* ; \
+		for j in $(CURDIR)/debian/bin/* ; do \
+			echo sed "1 s/.*/#\!\/usr\/bin\/python$$i/" $$j ; \
+		done ; \
+		PYMAJOR=`echo $$i | cut -d'.' -f1` ; \
+		echo "===> Testing with python$$i (python$$PYMAJOR)" ; \
+		rm -rf .testrepository ; \
+		testr-python$$PYMAJOR init ; \
+		TEMP_REZ=`mktemp -t` ; \
+		PYTHONPATH=$(CURDIR) PYTHON=python$$i testr-python$$PYMAJOR run --subunit | tee $$TEMP_REZ | subunit2pyunit ; \
+		cat $$TEMP_REZ | subunit-filter -s --no-passthrough | subunit-stats ; \
+		rm -f $$TEMP_REZ ; \
+		testr-python$$PYMAJOR slowest ; \
+	done
+	set -e ; set -x ; for j in $(CURDIR)/debian/bin/* ; do \
+		echo sed "1 s/.*/#\!\/usr\/bin\/python/" $$j ; \
+	done
+endif
+
 
 override_dh_sphinxdoc:
 	sphinx-build -b html doc/source debian/python-os-testr-doc/usr/share/doc/python-os-testr-doc/html
