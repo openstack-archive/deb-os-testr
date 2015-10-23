@@ -30,6 +30,9 @@ override_dh_install:
 	mv $(CURDIR)/debian/python-os-testr/usr/bin/subunit2html $(CURDIR)/debian/python-os-testr/usr/bin/python2-subunit2html
 	mv $(CURDIR)/debian/python3-os-testr/usr/bin/subunit2html $(CURDIR)/debian/python3-os-testr/usr/bin/python3-subunit2html
 
+override_dh_python3:
+	dh_python3 --shebang=/usr/bin/python3
+
 override_dh_auto_test:
 ifeq (,$(findstring nocheck, $(DEB_BUILD_OPTIONS)))
 	@echo "===> Running tests"
