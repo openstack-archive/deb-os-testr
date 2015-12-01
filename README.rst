@@ -17,10 +17,3 @@ Features
 * subunit-trace: an output filter for a subunit stream which provides useful
                  information about the run
 * subunit2html: generates a test results html page from a subunit stream
-
-Release Notes
-=============
-
-0.1.0
------
- * First release which includes: ostestr, subunit-trace, and subunit2html
