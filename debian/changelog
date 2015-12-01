@@ -1,3 +1,9 @@
+python-os-testr (0.4.2-1) UNRELEASED; urgency=medium
+
+  * New upstream release.
+
+ -- Corey Bryant <corey.bryant@canonical.com>  Tue, 01 Dec 2015 14:44:50 -0500
+
 python-os-testr (0.2.0-3) unstable; urgency=medium
 
   * override_dh_python3 to fix Py3 shebang.
