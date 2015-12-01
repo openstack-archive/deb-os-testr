@@ -2,6 +2,7 @@ python-os-testr (0.4.2-1) UNRELEASED; urgency=medium
 
   * New upstream release.
   * Align dependencies with upstream.
+  * d/gbp.conf: Set debian-branch to debian/mitaka.
 
  -- Corey Bryant <corey.bryant@canonical.com>  Tue, 01 Dec 2015 14:44:50 -0500
 
