@@ -8,8 +8,6 @@ UPSTREAM_GIT = git://github.com/openstack/os-testr.git
 
 export OSLO_PACKAGE_VERSION=$(VERSION)
 
-export PATH+=:$(CURDIR)/debian/bin
-
 %:
 	dh $@ --buildsystem=python_distutils --with python2,python3,sphinxdoc
 
@@ -46,7 +44,7 @@ ifeq (,$(findstring nocheck, $(DEB_BUILD_OPTIONS)))
 		rm -rf .testrepository ; \
 		testr-python$$PYMAJOR init ; \
 		TEMP_REZ=`mktemp -t` ; \
-		PYTHONPATH=$(CURDIR) PYTHON=python$$i testr-python$$PYMAJOR run --subunit | tee $$TEMP_REZ | subunit2pyunit ; \
+		export PATH=$$PATH:$(CURDIR)/debian/bin ; PYTHONPATH=$(CURDIR) PYTHON=python$$i testr-python$$PYMAJOR run --subunit | tee $$TEMP_REZ | subunit2pyunit ; \
 		cat $$TEMP_REZ | subunit-filter -s --no-passthrough | subunit-stats ; \
 		rm -f $$TEMP_REZ ; \
 		testr-python$$PYMAJOR slowest ; \
