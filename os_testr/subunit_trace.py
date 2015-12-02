@@ -120,6 +120,7 @@ def print_attachments(stream, test, all_channels=False):
             # indent attachment lines 4 spaces to make them visually
             # offset
             for line in detail.as_text().split('\n'):
+                line = line.encode('utf8')
                 stream.write("    %s\n" % line)
 
 
@@ -147,7 +148,7 @@ def find_test_run_time_diff(test_id, run_time):
 
 
 def show_outcome(stream, test, print_failures=False, failonly=False,
-                 enable_diff=False, threshold='0'):
+                 enable_diff=False, threshold='0', abbreviate=False):
     global RESULTS
     status = test['status']
     # TODO(sdague): ask lifeless why on this?
@@ -168,30 +169,45 @@ def show_outcome(stream, test, print_failures=False, failonly=False,
 
     if status == 'fail':
         FAILS.append(test)
-        stream.write('{%s} %s [%s] ... FAILED\n' % (
-            worker, name, duration))
-        if not print_failures:
-            print_attachments(stream, test, all_channels=True)
-    elif not failonly:
-        if status == 'success':
-            out_string = '{%s} %s [%s' % (worker, name, duration)
-            perc_diff = find_test_run_time_diff(test['id'], duration)
-            if enable_diff:
-                if perc_diff and abs(perc_diff) >= abs(float(threshold)):
-                    if perc_diff > 0:
-                        out_string = out_string + ' +%.2f%%' % perc_diff
-                    else:
-                        out_string = out_string + ' %.2f%%' % perc_diff
-            stream.write(out_string + '] ... ok\n')
-            print_attachments(stream, test)
-        elif status == 'skip':
-            stream.write('{%s} %s ... SKIPPED: %s\n' % (
-                worker, name, test['details']['reason'].as_text()))
+        if abbreviate:
+            stream.write('F')
         else:
-            stream.write('{%s} %s [%s] ... %s\n' % (
-                worker, name, duration, test['status']))
+            stream.write('{%s} %s [%s] ... FAILED\n' % (
+                worker, name, duration))
             if not print_failures:
                 print_attachments(stream, test, all_channels=True)
+    elif not failonly:
+        if status == 'success':
+            if abbreviate:
+                stream.write('.')
+            else:
+                out_string = '{%s} %s [%s' % (worker, name, duration)
+                perc_diff = find_test_run_time_diff(test['id'], duration)
+                if enable_diff:
+                    if perc_diff and abs(perc_diff) >= abs(float(threshold)):
+                        if perc_diff > 0:
+                            out_string = out_string + ' +%.2f%%' % perc_diff
+                        else:
+                            out_string = out_string + ' %.2f%%' % perc_diff
+                stream.write(out_string + '] ... ok\n')
+                print_attachments(stream, test)
+        elif status == 'skip':
+            if abbreviate:
+                stream.write('S')
+            else:
+                reason = test['details'].get('reason', '')
+                if reason:
+                    reason = ': ' + reason.as_text()
+                stream.write('{%s} %s ... SKIPPED%s\n' % (
+                    worker, name, reason))
+        else:
+            if abbreviate:
+                stream.write('%s' % test['status'][0])
+            else:
+                stream.write('{%s} %s [%s] ... %s\n' % (
+                    worker, name, duration, test['status']))
+                if not print_failures:
+                    print_attachments(stream, test, all_channels=True)
 
     stream.flush()
 
@@ -239,8 +255,13 @@ def run_time():
 def worker_stats(worker):
     tests = RESULTS[worker]
     num_tests = len(tests)
-    delta = tests[-1]['timestamps'][1] - tests[0]['timestamps'][0]
-    return num_tests, delta
+    stop_time = tests[-1]['timestamps'][1]
+    start_time = tests[0]['timestamps'][0]
+    if not start_time or not stop_time:
+        delta = 'N/A'
+    else:
+        delta = stop_time - start_time
+    return num_tests, str(delta)
 
 
 def print_summary(stream, elapsed_time):
@@ -266,8 +287,11 @@ def print_summary(stream, elapsed_time):
                     "Race in testr accounting.\n" % w)
             else:
                 num, time = worker_stats(w)
-                stream.write(" - Worker %s (%s tests) => %ss\n" %
-                             (w, num, time))
+                out_str = " - Worker %s (%s tests) => %s" % (w, num, time)
+                if time.isdigit():
+                    out_str += 's'
+                out_str += '\n'
+                stream.write(out_str)
 
 
 def parse_args():
@@ -283,6 +307,9 @@ def parse_args():
                         default=(
                             os.environ.get('TRACE_FAILONLY', False)
                             is not False))
+    parser.add_argument('--abbreviate', '-a', action='store_true',
+                        dest='abbreviate', help='Print one character status'
+                                                'for each test')
     parser.add_argument('--perc-diff', '-d', action='store_true',
                         dest='enable_diff',
                         help="Print percent change in run time on each test ")
@@ -304,7 +331,8 @@ def main():
         functools.partial(show_outcome, sys.stdout,
                           print_failures=args.print_failures,
                           failonly=args.failonly,
-                          enable_diff=args.enable_diff))
+                          enable_diff=args.enable_diff,
+                          abbreviate=args.abbreviate))
     summary = testtools.StreamSummary()
     result = testtools.CopyStreamResult([outcomes, summary])
     result = testtools.StreamResultRouter(result)

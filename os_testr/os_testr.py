@@ -23,41 +23,54 @@ from subunit import run as subunit_run
 from testtools import run as testtools_run
 
 
-def parse_args():
+def get_parser(args):
     parser = argparse.ArgumentParser(
         description='Tool to run openstack tests')
-    parser.add_argument('--blacklist_file', '-b',
-                        help='Path to a blacklist file, this file contains a'
-                             ' separate regex exclude on each newline')
-    parser.add_argument('--regex', '-r',
-                        help='A normal testr selection regex. If a blacklist '
-                             'file is specified, the regex will be appended '
-                             'to the end of the generated regex from that '
-                             'file')
-    parser.add_argument('--pretty', '-p', dest='pretty', action='store_true',
+    list_files = parser.add_mutually_exclusive_group()
+    list_files.add_argument('--blacklist_file', '-b',
+                            help='Path to a blacklist file, this file '
+                                 'contains a separate regex exclude on each '
+                                 'newline')
+    list_files.add_argument('--whitelist_file', '-w',
+                            help='Path to a whitelist file, this file '
+                                 'contains a separate regex on each newline.')
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--regex', '-r',
+                       help='A normal testr selection regex. If a blacklist '
+                            'file is specified, the regex will be appended '
+                            'to the end of the generated regex from that '
+                            'file.')
+    group.add_argument('--path', metavar='FILE_OR_DIRECTORY',
+                       help='A file name or directory of tests to run.')
+    group.add_argument('--no-discover', '-n', metavar='TEST_ID',
+                       help="Takes in a single test to bypasses test "
+                            "discover and just excute the test specified. "
+                            "A file name may be used in place of a test "
+                            "name.")
+    pretty = parser.add_mutually_exclusive_group()
+    pretty.add_argument('--pretty', '-p', dest='pretty', action='store_true',
                         help='Print pretty output from subunit-trace. This is '
                              'mutually exclusive with --subunit')
-    parser.add_argument('--no-pretty', dest='pretty', action='store_false',
+    pretty.add_argument('--no-pretty', dest='pretty', action='store_false',
                         help='Disable the pretty output with subunit-trace')
     parser.add_argument('--subunit', '-s', action='store_true',
                         help='output the raw subunit v2 from the test run '
-                             'this is mutuall exclusive with --pretty')
+                             'this is mutually exclusive with --pretty')
     parser.add_argument('--list', '-l', action='store_true',
                         help='List all the tests which will be run.')
-    parser.add_argument('--no-discover', '-n', metavar='TEST_ID',
-                        help="Takes in a single test to bypasses test "
-                             "discover and just excute the test specified")
-    parser.add_argument('--slowest', dest='slowest', action='store_true',
-                        help="after the test run print the slowest tests")
-    parser.add_argument('--no-slowest', dest='slowest', action='store_false',
-                        help="after the test run don't print the slowest "
-                             "tests")
+    slowest = parser.add_mutually_exclusive_group()
+    slowest.add_argument('--slowest', dest='slowest', action='store_true',
+                         help="after the test run print the slowest tests")
+    slowest.add_argument('--no-slowest', dest='slowest', action='store_false',
+                         help="after the test run don't print the slowest "
+                              "tests")
     parser.add_argument('--pdb', metavar='TEST_ID',
                         help='Run a single test that has pdb traces added')
-    parser.add_argument('--parallel', dest='parallel', action='store_true',
-                        help='Run tests in parallel (this is the default)')
-    parser.add_argument('--serial', dest='parallel', action='store_false',
-                        help='Run tests serially')
+    parallel = parser.add_mutually_exclusive_group()
+    parallel.add_argument('--parallel', dest='parallel', action='store_true',
+                          help='Run tests in parallel (this is the default)')
+    parallel.add_argument('--serial', dest='parallel', action='store_false',
+                          help='Run tests serially')
     parser.add_argument('--concurrency', '-c', type=int, metavar='WORKERS',
                         help='The number of workers to use when running in '
                              'parallel. By default this is the number of cpus')
@@ -71,8 +84,7 @@ def parse_args():
                              'prints the comment from the same line and all '
                              'skipped tests before the test run')
     parser.set_defaults(pretty=True, slowest=True, parallel=True)
-    opts = parser.parse_args()
-    return opts
+    return parser.parse_args(args)
 
 
 def _get_test_list(regex, env=None):
@@ -112,7 +124,16 @@ def print_skips(regex, message):
         print('\n')
 
 
-def construct_regex(blacklist_file, regex, print_exclude):
+def path_to_regex(path):
+    root, _ = os.path.splitext(path)
+    return root.replace('/', '.')
+
+
+def get_regex_from_whitelist_file(file_path):
+    return '|'.join(open(file_path).read().splitlines())
+
+
+def construct_regex(blacklist_file, whitelist_file, regex, print_exclude):
     if not blacklist_file:
         exclude_regex = ''
     else:
@@ -122,17 +143,25 @@ def construct_regex(blacklist_file, regex, print_exclude):
             raw_line = line.strip()
             split_line = raw_line.split('#')
             # Before the # is the regex
-            regex = split_line[0].strip()
-            # After the # is a comment
-            comment = split_line[1].strip()
-            if regex:
+            line_regex = split_line[0].strip()
+            if len(split_line) > 1:
+                # After the # is a comment
+                comment = split_line[1].strip()
+            else:
+                comment = ''
+            if line_regex:
                 if print_exclude:
-                    print_skips(regex, comment)
-                exclude_regex = '|'.join([regex, exclude_regex])
+                    print_skips(line_regex, comment)
+                if exclude_regex:
+                    exclude_regex = '|'.join([line_regex, exclude_regex])
+                else:
+                    exclude_regex = line_regex
         if exclude_regex:
-            exclude_regex = "'(?!.*" + exclude_regex + ")"
+            exclude_regex = "^((?!" + exclude_regex + ").)*$"
     if regex:
         exclude_regex += regex
+    if whitelist_file:
+        exclude_regex += '%s' % get_regex_from_whitelist_file(whitelist_file)
     return exclude_regex
 
 
@@ -224,12 +253,25 @@ def call_subunit_run(test_id, pretty, subunit):
         testtools_run.main([sys.argv[0], test_id], sys.stdout)
 
 
-def call_testtools_run(test_id):
-    testtools_run.main([sys.argv[0], test_id], sys.stdout)
+def _select_and_call_runner(opts, exclude_regex):
+    ec = 1
+    if not os.path.isdir('.testrepository'):
+        subprocess.call(['testr', 'init'])
+
+    if not opts.no_discover and not opts.pdb:
+        ec = call_testr(exclude_regex, opts.subunit, opts.pretty, opts.list,
+                        opts.slowest, opts.parallel, opts.concurrency,
+                        opts.until_failure)
+    else:
+        test_to_run = opts.no_discover or opts.pdb
+        if test_to_run.find('/') != -1:
+            test_to_run = path_to_regex(test_to_run)
+        ec = call_subunit_run(test_to_run, opts.pretty, opts.subunit)
+    return ec
 
 
 def main():
-    opts = parse_args()
+    opts = get_parser(sys.argv[1:])
     if opts.pretty and opts.subunit:
         msg = ('Subunit output and pretty output cannot be specified at the '
                'same time')
@@ -248,18 +290,15 @@ def main():
         msg = "You can not use until_failure mode with pdb or no-discover"
         print(msg)
         exit(5)
-    exclude_regex = construct_regex(opts.blacklist_file, opts.regex,
-                                    opts.print_exclude)
-    if not os.path.isdir('.testrepository'):
-        subprocess.call(['testr', 'init'])
-    if not opts.no_discover and not opts.pdb:
-        exit(call_testr(exclude_regex, opts.subunit, opts.pretty, opts.list,
-                        opts.slowest, opts.parallel, opts.concurrency,
-                        opts.until_failure))
-    elif opts.pdb:
-        exit(call_testtools_run(opts.pdb))
+    if opts.path:
+        regex = path_to_regex(opts.path)
     else:
-        exit(call_subunit_run(opts.no_discover, opts.pretty, opts.subunit))
+        regex = opts.regex
+    exclude_regex = construct_regex(opts.blacklist_file,
+                                    opts.whitelist_file,
+                                    regex,
+                                    opts.print_exclude)
+    exit(_select_and_call_runner(opts, exclude_regex))
 
 if __name__ == '__main__':
     main()
