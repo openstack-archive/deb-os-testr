@@ -1,3 +1,9 @@
+python-os-testr (0.4.2-1) experimental; urgency=medium
+
+  * New upstream release.
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 02 Dec 2015 15:07:37 +0100
+
 python-os-testr (0.2.0-4) unstable; urgency=medium
 
   * Fixed tweak of $PATH when running tests (Closes: #806489).
