@@ -1,6 +1,11 @@
 python-os-testr (0.4.2-1) experimental; urgency=medium
 
+  [ Thomas Goirand ]
   * New upstream release.
+  * Fixed (build-)depends for this release.
+
+  [ Corey Bryant ]
+  * d/control: Update uploaders.
 
  -- Thomas Goirand <zigo@debian.org>  Wed, 02 Dec 2015 15:07:37 +0100
 
