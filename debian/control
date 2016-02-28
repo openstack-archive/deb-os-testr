@@ -33,8 +33,8 @@ Build-Depends-Indep: python-babel (>= 1.3),
                      subunit (>= 0.0.18),
                      testrepository (>= 0.0.18),
 Standards-Version: 3.9.6
-Vcs-Browser: http://anonscm.debian.org/gitweb/?p=openstack/python-os-testr.git
-Vcs-Git: git://anonscm.debian.org/openstack/python-os-testr.git
+Vcs-Browser: https://anonscm.debian.org/cgit/openstack/python-os-testr.git/
+Vcs-Git: https://anonscm.debian.org/git/openstack/python-os-testr.git
 Homepage: https://github.com/openstack/os-testr
 XS-Testsuite: autopkgtest
 
