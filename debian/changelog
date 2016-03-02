@@ -2,6 +2,7 @@ python-os-testr (0.4.2-2) UNRELEASED; urgency=medium
 
   * Fixed homepage (https).
   * Fixed VCS URLs (https).
+  * Removed XS-Testsuite field from d/control (not needed anymore).
 
  -- Ondřej Nový <novy@ondrej.org>  Sun, 28 Feb 2016 15:45:35 +0100
 
