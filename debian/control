@@ -36,6 +36,7 @@ Standards-Version: 3.9.6
 Vcs-Browser: https://anonscm.debian.org/cgit/openstack/python-os-testr.git/
 Vcs-Git: https://anonscm.debian.org/git/openstack/python-os-testr.git
 Homepage: https://github.com/openstack/os-testr
+XS-Testsuite: autopkgtest
 
 Package: python-os-testr
 Architecture: all
