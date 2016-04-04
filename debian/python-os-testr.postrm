@@ -2,7 +2,7 @@
 
 set -e
 
-if [ "$1" = "remove" ] ; then
+if [ "$1" = "remove" ] || [ "$1" = "disappear" ] ; then
 	update-alternatives --remove ostestr /usr/bin/python2-ostestr
 	update-alternatives --remove subunit-trace /usr/bin/python2-subunit-trace
 	update-alternatives --remove subunit2html /usr/bin/python2-subunit2html

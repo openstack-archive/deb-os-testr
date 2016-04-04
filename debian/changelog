@@ -9,6 +9,8 @@ python-os-testr (0.6.0-1) unstable; urgency=medium
   * Uploading to unstable.
   * Standards-Version: 3.9.7 (no change).
   * Fixed debian/copyright ordering.
+  * Added generate-subunit to the pool of update-alternatives managed command
+    line programs.
 
  -- Thomas Goirand <zigo@debian.org>  Mon, 04 Apr 2016 09:00:23 +0000
 
