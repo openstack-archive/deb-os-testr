@@ -2,7 +2,7 @@
 
 import sys
 
-from os_testr.os_testr import main
+from os_testr.ostestr import main
 
 if __name__ == "__main__":
     sys.exit(main())

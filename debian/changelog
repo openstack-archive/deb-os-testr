@@ -9,6 +9,7 @@ python-os-testr (0.7.0-1) UNRELEASED; urgency=medium
   * New upstream release.
   * d/gbp.conf: Update branch for Newton.
   * d/control: Align (Build-)Depends with upstream.
+  * d/bin/ostestr: Update import for rename of os_testr.py to ostestr.py.
 
  -- Corey Bryant <corey.bryant@canonical.com>  Mon, 06 Jun 2016 09:42:32 -0400
 
