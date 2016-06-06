@@ -19,13 +19,21 @@ import os
 import subprocess
 import sys
 
+import pbr.version
 from subunit import run as subunit_run
 from testtools import run as testtools_run
+
+from os_testr import regex_builder as rb
+
+
+__version__ = pbr.version.VersionInfo('os_testr').version_string()
 
 
 def get_parser(args):
     parser = argparse.ArgumentParser(
         description='Tool to run openstack tests')
+    parser.add_argument('--version', action='version',
+                        version='%s' % __version__)
     list_files = parser.add_mutually_exclusive_group()
     list_files.add_argument('--blacklist_file', '-b',
                             help='Path to a blacklist file, this file '
@@ -44,7 +52,7 @@ def get_parser(args):
                        help='A file name or directory of tests to run.')
     group.add_argument('--no-discover', '-n', metavar='TEST_ID',
                        help="Takes in a single test to bypasses test "
-                            "discover and just excute the test specified. "
+                            "discover and just execute the test specified. "
                             "A file name may be used in place of a test "
                             "name.")
     pretty = parser.add_mutually_exclusive_group()
@@ -86,96 +94,12 @@ def get_parser(args):
                              'prints the comment from the same line and all '
                              'skipped tests before the test run')
     parser.set_defaults(pretty=True, slowest=True, parallel=True)
-    return parser.parse_args(args)
-
-
-def _get_test_list(regex, env=None):
-    env = env or copy.deepcopy(os.environ)
-    proc = subprocess.Popen(['testr', 'list-tests', regex], env=env,
-                            stdout=subprocess.PIPE)
-    out = proc.communicate()[0]
-    raw_test_list = out.split('\n')
-    bad = False
-    test_list = []
-    exclude_list = ['OS_', 'CAPTURE', 'TEST_TIMEOUT', 'PYTHON',
-                    'subunit.run discover']
-    for line in raw_test_list:
-        for exclude in exclude_list:
-            if exclude in line:
-                bad = True
-                break
-            elif not line:
-                bad = True
-                break
-        if not bad:
-            test_list.append(line)
-        bad = False
-    return test_list
-
-
-def print_skips(regex, message):
-    test_list = _get_test_list(regex)
-    if test_list:
-        if message:
-            print(message)
-        else:
-            print('Skipped because of regex %s:' % regex)
-        for test in test_list:
-            print(test)
-        # Extra whitespace to separate
-        print('\n')
-
-
-def path_to_regex(path):
-    root, _ = os.path.splitext(path)
-    return root.replace('/', '.')
-
-
-def get_regex_from_whitelist_file(file_path):
-    lines = []
-    for line in open(file_path).read().splitlines():
-        split_line = line.strip().split('#')
-        # Before the # is the regex
-        line_regex = split_line[0].strip()
-        if line_regex:
-            lines.append(line_regex)
-    return '|'.join(lines)
-
-
-def construct_regex(blacklist_file, whitelist_file, regex, print_exclude):
-    if not blacklist_file:
-        exclude_regex = ''
-    else:
-        black_file = open(blacklist_file, 'r')
-        exclude_regex = ''
-        for line in black_file:
-            raw_line = line.strip()
-            split_line = raw_line.split('#')
-            # Before the # is the regex
-            line_regex = split_line[0].strip()
-            if len(split_line) > 1:
-                # After the # is a comment
-                comment = split_line[1].strip()
-            else:
-                comment = ''
-            if line_regex:
-                if print_exclude:
-                    print_skips(line_regex, comment)
-                if exclude_regex:
-                    exclude_regex = '|'.join([line_regex, exclude_regex])
-                else:
-                    exclude_regex = line_regex
-        if exclude_regex:
-            exclude_regex = "^((?!" + exclude_regex + ").)*$"
-    if regex:
-        exclude_regex += regex
-    if whitelist_file:
-        exclude_regex += '%s' % get_regex_from_whitelist_file(whitelist_file)
-    return exclude_regex
+    return parser.parse_known_args(args)
 
 
 def call_testr(regex, subunit, pretty, list_tests, slowest, parallel, concur,
-               until_failure, color):
+               until_failure, color, others=None):
+    others = others or []
     if parallel:
         cmd = ['testr', 'run', '--parallel']
         if concur:
@@ -199,7 +123,7 @@ def call_testr(regex, subunit, pretty, list_tests, slowest, parallel, concur,
     # This workaround is necessary because of lp bug 1411804 it's super hacky
     # and makes tons of unfounded assumptions, but it works for the most part
     if (subunit or pretty) and until_failure:
-        test_list = _get_test_list(regex, env)
+        test_list = rb._get_test_list(regex, env)
         count = 0
         failed = False
         if not test_list:
@@ -237,11 +161,13 @@ def call_testr(regex, subunit, pretty, list_tests, slowest, parallel, concur,
                 exit(0)
     # If not until-failure special case call testr like normal
     elif pretty and not list_tests:
+        cmd.extend(others)
         ps = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE)
         proc = subprocess.Popen(subunit_trace_cmd,
                                 env=env, stdin=ps.stdout)
         ps.stdout.close()
     else:
+        cmd.extend(others)
         proc = subprocess.Popen(cmd, env=env)
     proc.communicate()
     return_code = proc.returncode
@@ -268,7 +194,7 @@ def call_subunit_run(test_id, pretty, subunit):
         testtools_run.main([sys.argv[0], test_id], sys.stdout)
 
 
-def _select_and_call_runner(opts, exclude_regex):
+def _select_and_call_runner(opts, exclude_regex, others):
     ec = 1
     if not os.path.isdir('.testrepository'):
         subprocess.call(['testr', 'init'])
@@ -276,17 +202,20 @@ def _select_and_call_runner(opts, exclude_regex):
     if not opts.no_discover and not opts.pdb:
         ec = call_testr(exclude_regex, opts.subunit, opts.pretty, opts.list,
                         opts.slowest, opts.parallel, opts.concurrency,
-                        opts.until_failure, opts.color)
+                        opts.until_failure, opts.color, others)
     else:
+        if others:
+            print('Unexpected arguments: ' + ' '.join(others))
+            return 2
         test_to_run = opts.no_discover or opts.pdb
         if test_to_run.find('/') != -1:
-            test_to_run = path_to_regex(test_to_run)
+            test_to_run = rb.path_to_regex(test_to_run)
         ec = call_subunit_run(test_to_run, opts.pretty, opts.subunit)
     return ec
 
 
 def main():
-    opts = get_parser(sys.argv[1:])
+    opts, others = get_parser(sys.argv[1:])
     if opts.pretty and opts.subunit:
         msg = ('Subunit output and pretty output cannot be specified at the '
                'same time')
@@ -306,14 +235,14 @@ def main():
         print(msg)
         exit(5)
     if opts.path:
-        regex = path_to_regex(opts.path)
+        regex = rb.path_to_regex(opts.path)
     else:
         regex = opts.regex
-    exclude_regex = construct_regex(opts.blacklist_file,
-                                    opts.whitelist_file,
-                                    regex,
-                                    opts.print_exclude)
-    exit(_select_and_call_runner(opts, exclude_regex))
+    exclude_regex = rb.construct_regex(opts.blacklist_file,
+                                       opts.whitelist_file,
+                                       regex,
+                                       opts.print_exclude)
+    exit(_select_and_call_runner(opts, exclude_regex, others))
 
 if __name__ == '__main__':
     main()

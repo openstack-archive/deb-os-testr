@@ -26,6 +26,7 @@ import os
 import re
 import sys
 
+import pbr.version
 import subunit
 import testtools
 
@@ -191,7 +192,7 @@ def show_outcome(stream, test, print_failures=False, failonly=False,
             if not print_failures:
                 print_attachments(stream, test, all_channels=True)
     elif not failonly:
-        if status == 'success':
+        if status == 'success' or status == 'xfail':
             if abbreviate:
                 color.write('.', 'green')
             else:
@@ -313,8 +314,13 @@ def print_summary(stream, elapsed_time):
                 stream.write(out_str)
 
 
+__version__ = pbr.version.VersionInfo('os_testr').version_string()
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--version', action='version',
+                        version='%s' % __version__)
     parser.add_argument('--no-failure-debug', '-n', action='store_true',
                         dest='print_failures', help='Disable printing failure '
                         'debug information in realtime')
@@ -344,21 +350,22 @@ def parse_args():
     return parser.parse_args()
 
 
-def main():
-    args = parse_args()
+def trace(stdin, stdout, print_failures=False, failonly=False,
+          enable_diff=False, abbreviate=False, color=False, post_fails=False,
+          no_summary=False):
     stream = subunit.ByteStreamToStreamResult(
-        sys.stdin, non_subunit_name='stdout')
+        stdin, non_subunit_name='stdout')
     outcomes = testtools.StreamToDict(
-        functools.partial(show_outcome, sys.stdout,
-                          print_failures=args.print_failures,
-                          failonly=args.failonly,
-                          enable_diff=args.enable_diff,
-                          abbreviate=args.abbreviate,
-                          enable_color=args.color))
+        functools.partial(show_outcome, stdout,
+                          print_failures=print_failures,
+                          failonly=failonly,
+                          enable_diff=enable_diff,
+                          abbreviate=abbreviate,
+                          enable_color=color))
     summary = testtools.StreamSummary()
     result = testtools.CopyStreamResult([outcomes, summary])
     result = testtools.StreamResultRouter(result)
-    cat = subunit.test_results.CatFiles(sys.stdout)
+    cat = subunit.test_results.CatFiles(stdout)
     result.add_rule(cat, 'test_id', test_id=None)
     start_time = datetime.datetime.utcnow()
     result.startTestRun()
@@ -371,18 +378,25 @@ def main():
 
     if count_tests('status', '.*') == 0:
         print("The test run didn't actually run any tests")
-        exit(1)
-    if args.post_fails:
-        print_fails(sys.stdout)
-    if not args.no_summary:
-        print_summary(sys.stdout, elapsed_time)
+        return 1
+    if post_fails:
+        print_fails(stdout)
+    if not no_summary:
+        print_summary(stdout, elapsed_time)
 
     # NOTE(mtreinish): Ideally this should live in testtools streamSummary
     # this is just in place until the behavior lands there (if it ever does)
     if count_tests('status', '^success$') == 0:
         print("\nNo tests were successful during the run")
-        exit(1)
-    exit(0 if summary.wasSuccessful() else 1)
+        return 1
+    return 0 if summary.wasSuccessful() else 1
+
+
+def main():
+    args = parse_args()
+    exit(trace(sys.stdin, sys.stdout, args.print_failures, args.failonly,
+               args.enable_diff, args.abbreviate, args.color, args.post_fails,
+               args.no_summary))
 
 
 if __name__ == '__main__':
