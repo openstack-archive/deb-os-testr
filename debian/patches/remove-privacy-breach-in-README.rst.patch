@@ -1,0 +1,22 @@
+Description: Removes privacy breach in README.rst
+Author: Thomas Goirand <zigo@debian.org>
+Forwarded: no
+Last-Update: 2016-06-08
+
+--- python-os-testr-0.7.0.orig/README.rst
++++ python-os-testr-0.7.0/README.rst
+@@ -2,14 +2,6 @@
+ os-testr
+ ========
+ 
+-.. image:: https://img.shields.io/pypi/v/os-testr.svg
+-    :target: https://pypi.python.org/pypi/os-testr/
+-    :alt: Latest Version
+-
+-.. image:: https://img.shields.io/pypi/dm/os-testr.svg
+-    :target: https://pypi.python.org/pypi/os-testr/
+-    :alt: Downloads
+-
+ A testr wrapper to provide functionality for OpenStack projects.
+ 
+ * Free software: Apache license
