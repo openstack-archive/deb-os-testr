@@ -1,4 +1,4 @@
-python-os-testr (0.7.0-1) UNRELEASED; urgency=medium
+python-os-testr (0.7.0-1) experimental; urgency=medium
 
   [ Ondřej Nový ]
   * Standards-Version is 3.9.8 now (no change)
@@ -11,7 +11,7 @@ python-os-testr (0.7.0-1) UNRELEASED; urgency=medium
   * d/control: Align (Build-)Depends with upstream.
   * d/bin/ostestr: Update import for rename of os_testr.py to ostestr.py.
 
- -- Corey Bryant <corey.bryant@canonical.com>  Mon, 06 Jun 2016 09:42:32 -0400
+ -- Corey Bryant <corey.bryant@canonical.com>  Wed, 08 Jun 2016 13:31:47 +0000
 
 python-os-testr (0.6.0-1) unstable; urgency=medium
 
