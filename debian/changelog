@@ -1,3 +1,10 @@
+python-os-testr (0.6.0-1~bpo8+1) jessie-backports; urgency=medium
+
+  * Team upload.
+  * Rebuild for jessie-backports.
+
+ -- Ondřej Nový <onovy@debian.org>  Sun, 26 Jun 2016 05:34:24 +0200
+
 python-os-testr (0.6.0-1) unstable; urgency=medium
 
   [ Ondřej Nový ]
